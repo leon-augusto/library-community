@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block 'title' %} Register {% endblock %}
+
+{% block 'content' %}
+
+<div class="container" xmlns="http://www.w3.org/1999/html">
+    <br>
+
+
+    {% if status == '1' %}
+        <div class="alert alert-primary alert-dismissible fade show" role="alert">
+            The fields <strong>name</strong> or <strong>email</strong> cannot be void.
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    {% endif %}
+
+    {% if status == '2' %}
+        <div class="alert alert-primary alert-dismissible fade show" role="alert">
+            The field <strong>password</strong> must have 8 characters at least.
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    {% endif %}
+
+    {% if status == '3' %}
+        <div class="alert alert-primary alert-dismissible fade show" role="alert">
+            This <strong>user</strong> already exist in the system.
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    {% endif %}
+
+    {% if status == '4' %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>ERROR IN THE SYSTEM!</strong>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-3"></div>
+        <div class="col-md">
+            <h1>Criar Conta</h1>
+            <hr>
+            <form method="POST" action="{% url 'valid_register' %}">{% csrf_token %}
+                <label for="name">Nome Completo</label>
+                <input name="name" class="form-control" type="text" placeholder="nome">
+                <br>
+                <label for="email">E-mail</label>
+                <input name="email" class="form-control" type="email" placeholder="e-mail">
+                <br>
+                <label for="password">Senha</label>
+                <input name="password" class="form-control" type="password" placeholder="senha">
+                <br>
+                <div class="row">
+                    <input class="btn btn-info btn-lg mx-auto" type="submit" value="Cadastrar">
+                </div>
+            </form>
+        </div>
+        <div class="col-md-3"></div>
+    </div>
+    <hr>
+    <p class="text-center">
+        <a href="{% url 'login' %}">Login</a>
+    </p>
+</div>
+
+{% endblock %}

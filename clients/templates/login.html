@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block 'title' %} Login {% endblock %}
+
+{% block 'content' %}
+
+<div class="container" xmlns="http://www.w3.org/1999/html">
+    <br>
+    {% if status == '1' %}
+        <div class="alert alert-primary alert-dismissible fade show" role="alert">
+            Invalid e-mail or password.
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    {% endif %}
+
+    {% if status == '2' %}
+        <div class="alert alert-primary alert-dismissible fade show" role="alert">
+            Log in before trying to enter on the system.
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-3"></div>
+        <div class="col-md">
+            <h1>Login</h1>
+            <hr>
+            <form method="POST" action="{% url 'valid_login' %}">{% csrf_token %}
+                <label for="email">E-mail</label>
+                <input name="email" class="form-control" type="email" placeholder="e-mail">
+                <br>
+                <label for="password">Senha</label>
+                <input name="password" class="form-control" type="password" placeholder="senha">
+                <br>
+                <div class="row">
+                    <input class="btn btn-info btn-lg mx-auto" type="submit" value="Entrar">
+                </div>
+            </form>
+        </div>
+        <div class="col-md-3"></div>
+    </div>
+    <hr>
+    <p class="text-center">
+        <a href="{% url 'register' %}">Criar conta</a>
+    </p>
+</div>
+
+{% endblock %}

@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% load filters %}
+
+{% block 'title' %} {{book.name}} {% endblock %}
+
+{% block 'content' %}
+
+    <div class="container">
+        <br>
+        <form style="max-width: 700px; margin: auto;" action="{% url 'alter_book' book.id %}" method="POST">{% csrf_token %}
+            <p>
+                <label>Título: </label>
+                <input class="form-control" type="text" value="{{ book.name }}" name="book_name">
+            </p>
+            <p>
+                <label>Autor: </label>
+                <input class="form-control" type="text" value="{{ book.auth }}" name="book_auth">
+            </p><p>
+                <label>Co-Autor: </label>
+                <input class="form-control" type="text" value="{{ book.cd_auth }}" name="book_cd_auth">
+            </p>
+
+            <label>Categoria:&nbsp;&nbsp;</label>
+            <select class="form-control" name="book_category">
+                {% for category in books_categories %}
+                    {% if book.category == category %}
+                        <option value="{{category.id}}" selected>{{ category }}</option>
+                    {% else %}
+                        <option value="{{category.id}}" >{{ category }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select><br>
+
+            <p style="display: inline;">Status:&nbsp;</p>
+            {% if book.borrowed %}
+                <p style="display: inline;">emprestado</p>
+            {% else %}
+                <p style="display: inline;">não emprestado</p>
+            {% endif %}<br><br>
+
+            <p>Data de Cadastro: {{ book.register_date }}</p>
+
+            <div class="row">
+                <div class="col-md-12 bg-light text-right">
+                    {% if book.borrowed %}
+                        <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#returnBookModal">
+                            Devolver
+                        </button>
+                    {% else %}
+                        <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#returnBookModal" disabled>
+                            Devolver
+                        </button>
+                    {% endif %}
+
+                    <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteBookModal">
+                        Deletar
+                    </button>
+
+                    <input type="submit" class="btn btn-success" value="Salvar">
+                </div>
+            </div>
+        </form>
+        <br>
+
+        <div class="modal fade" id="deleteBookModal" tabindex="-1" role="dialog" aria-labelledby="deleteBookModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="deleteBookModalLabel">Comfirme para Remover</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <p>Deseja realmente deletar este livro?</p>
+                  <a href="{% url 'remove_book' book_id %}" class="btn btn-danger">Sim</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal fade" id="returnBookModal" tabindex="-1" role="dialog" aria-labelledby="returnBookModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="returnBookModalLabel">Modal title</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <form action="{% url 'return_of_book' %}" method="POST">{% csrf_token %}
+                  <select name="book_id" id="" class="form-control">
+                    {% for book_to_return in borrowed_books %}
+                      {% if book_to_return == book %}
+                        <option value="{{book.id}}" selected>{{book_to_return.name}}</option>
+                      {% else %}
+                        <option value="{{book.id}}">{{book_to_return.name}}</option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
+                  <br>
+                  <input type="submit" class="btn btn-success" value="Return">
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr>
+
+        <h2>Histórico de Empréstimo</h2>
+        <table class="table table-striped table-dark text-center">
+            <thead>
+                <tr>
+                    <th scope="col">Responsável</th>
+                    <th scope="col">Data e Hora do Empréstimo</th>
+                    <th scope="col">Retorno do livro</th>
+                    <th scope="col">Tempo Emprestado (dias)</th>
+                    <th scope="col">Avaliação do Empréstimo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for borrowing in borrowings %}
+                <tr>
+                    {% if borrowing.responsible == None %}
+                        <th scope="row">{{ borrowing.anonymous_responsible }}</th>
+                    {% else %}
+                        <th scope="row">{{ borrowing.responsible }}</th>
+                    {% endif %}
+                    <td>{{ borrowing.borrowing_date }}</td>
+                    {% if borrowing.book_return != None %}
+                        <td>{{ borrowing.book_return }}</td>
+                    {% else %}
+                        <td>-</td>
+                    {% endif %}
+                    <td>{{ borrowing.book_return|show_time:borrowing.borrowing_date }}</td>
+                    {% if borrowing.available == None and borrowing.book_return != None %}
+                        <td>
+                            <button onclick="get_id({{ borrowing.id }})" type="button" class="btn btn-info" data-toggle="modal" data-target="#exampleModal">
+                              Avaliar
+                            </button>
+                        </td>
+                    {% else %}
+                        {% if borrowing.book_return == None %}
+                            <td>
+                                <button class="btn btn-info disabled">Avaliar</button>
+                            </td>
+                        {% else %}
+                            <td>
+                                {% if borrowing.available == 'B' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star" viewBox="0 0 16 16">
+                                        <path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.565.565 0 0 0-.163-.505L1.71 6.745l4.052-.576a.525.525 0 0 0 .393-.288L8 2.223l1.847 3.658a.525.525 0 0 0 .393.288l4.052.575-2.906 2.77a.565.565 0 0 0-.163.506l.694 3.957-3.686-1.894a.503.503 0 0 0-.461 0z"/>
+                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star" viewBox="0 0 16 16">
+                                        <path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.565.565 0 0 0-.163-.505L1.71 6.745l4.052-.576a.525.525 0 0 0 .393-.288L8 2.223l1.847 3.658a.525.525 0 0 0 .393.288l4.052.575-2.906 2.77a.565.565 0 0 0-.163.506l.694 3.957-3.686-1.894a.503.503 0 0 0-.461 0z"/>
+                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star" viewBox="0 0 16 16">
+                                        <path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.565.565 0 0 0-.163-.505L1.71 6.745l4.052-.576a.525.525 0 0 0 .393-.288L8 2.223l1.847 3.658a.525.525 0 0 0 .393.288l4.052.575-2.906 2.77a.565.565 0 0 0-.163.506l.694 3.957-3.686-1.894a.503.503 0 0 0-.461 0z"/>
+                                    </svg>
+
+                                {% elif borrowing.available == 'R' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
+                                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star" viewBox="0 0 16 16">
+                                        <path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.565.565 0 0 0-.163-.505L1.71 6.745l4.052-.576a.525.525 0 0 0 .393-.288L8 2.223l1.847 3.658a.525.525 0 0 0 .393.288l4.052.575-2.906 2.77a.565.565 0 0 0-.163.506l.694 3.957-3.686-1.894a.503.503 0 0 0-.461 0z"/>
+                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star" viewBox="0 0 16 16">
+                                        <path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.565.565 0 0 0-.163-.505L1.71 6.745l4.052-.576a.525.525 0 0 0 .393-.288L8 2.223l1.847 3.658a.525.525 0 0 0 .393.288l4.052.575-2.906 2.77a.565.565 0 0 0-.163.506l.694 3.957-3.686-1.894a.503.503 0 0 0-.461 0z"/>
+                                    </svg>
+                                {% elif borrowing.available == 'G' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
+                                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
+                                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star" viewBox="0 0 16 16">
+                                        <path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.565.565 0 0 0-.163-.505L1.71 6.745l4.052-.576a.525.525 0 0 0 .393-.288L8 2.223l1.847 3.658a.525.525 0 0 0 .393.288l4.052.575-2.906 2.77a.565.565 0 0 0-.163.506l.694 3.957-3.686-1.894a.503.503 0 0 0-.461 0z"/>
+                                    </svg>
+                                {% elif borrowing.available == 'A' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
+                                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
+                                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
+                                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                    </svg>
+                                {% endif %}
+                            </td>
+
+                        {% endif %}
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+              <form action="{% url 'process_ava' %}" method="POST">{% csrf_token %}
+                  <input type="hidden" id="book_id" name="book_id" value="{{ book_id }}">
+                  <input type="hidden" id="borrowing_id" name="borrowing_id">
+                  <select class="form-control" name="options">
+                      <option value="B">Bad</option>
+                      <option value="R">Regular</option>
+                      <option value="G">Good</option>
+                      <option value="A">Awesome</option>
+                  </select>
+                  <br>
+                  <input type="submit" class="btn btn-info" value="avaliar">
+              </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+        function get_id(id){
+            input_borrowing = document.getElementById('borrowing_id')
+            input_borrowing.value = id
+        }
+    </script>
+{% endblock %}

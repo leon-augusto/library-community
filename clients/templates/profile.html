@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block 'title' %} {{client.name}} {% endblock %}
+
+{% block 'head' %}
+    <style>
+        .user img{
+            margin:1rem 0;
+            border-radius: 50%;
+            height: 15rem;
+            width: 15rem;
+        }
+    </style>
+
+{% endblock %}
+
+{% block 'content' %}
+
+    <div class="container">
+        <br>
+        {% if client.photo %}
+        <div class="user">
+            <img src="{{ client.photo.url }}" class="mx-auto d-block" alt="..." data-toggle="modal" data-target="#photoModal">
+        </div>
+        {% else %}
+            <div style="border-radius: 50%; height: 15rem; width: 15rem; background-color: gray; margin: auto;" data-toggle="modal" data-target="#photoModal"></div>
+            <br>
+        {% endif %}
+        <h1 class="text-center">{{ client }}</h1>
+
+        <hr>
+
+        <form style="max-width: 500px; margin: auto;" action="{% url 'update_datas' %}" method="POST">{% csrf_token %}
+            <p>
+                <label>Nome: </label>
+                <input class="form-control" type="text" value="{{ client.name }}" name="client_name" required>
+            </p>
+            <p>
+                <label>E-mail: </label>
+                <input class="form-control" type="email" value="{{ client.email }}" name="client_email" required>
+            </p>
+            <div class="row">
+                <div class="col-md-12 bg-light text-right">
+                    <input type="submit" class="btn btn-success" value="Salvar">
+                </div>
+            </div>
+        </form>
+
+        <hr>
+
+        <button type="button" class="btn btn-primary mx-auto d-block" data-toggle="modal" data-target="#passwordModal">
+          Alterar Senha
+        </button>
+
+        <br><br>
+
+        <div class="modal fade" id="photoModal" tabindex="-1" role="dialog" aria-labelledby="photoModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="photoModalLabel">Upload de Foto</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <form action="{% url 'upload_photo' %}" method="POST" enctype="multipart/form-data">{% csrf_token %}
+                    <div class="form-group">
+                        <label for="id_photo">Photo:&nbsp;</label>
+                        <input class="form-control" type="file" name="photo" id="id_photo" required>
+                    </div>
+                    <input type="submit" class="btn btn-success" value="Save">
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal fade" id="passwordModal" tabindex="-1" role="dialog" aria-labelledby="passwordModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="passwordModalLabel">Alteração de Senha</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                  <form action="{% url 'change_password' %}" method="POST">{% csrf_token %}
+                      <p>
+                        <label>Nova Senha: </label>
+                        <input class="form-control" type="password" name="client_password">
+                      </p>
+                      <p>
+                        <label>Repita Nova Senha: </label>
+                        <input class="form-control" type="password" name="client_password_again">
+                      </p>
+                      <p>
+                        <label>Atual Senha: </label>
+                        <input class="form-control" type="password" name="client_current_password">
+                      </p>
+                      <div class="row">
+                        <div class="col-md-12 bg-light text-right">
+                            <input type="submit" value="Salvar" class="btn btn-primary">
+                        </div>
+                      </div>
+                  </form>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+{% endblock %}
